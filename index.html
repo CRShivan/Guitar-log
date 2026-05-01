@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guitar Practice Log</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #080810;
+  --s1:      #0e0e1a;
+  --s2:      #141424;
+  --s3:      #1c1c30;
+  --border:  rgba(140,130,255,0.15);
+  --border2: rgba(140,130,255,0.3);
+  --accent:  #7c6fff;
+  --accent2: #c8a96e;
+  --teal:    #3ddc84;
+  --red:     #ff5b5b;
+  --text:    #e8e6ff;
+  --text2:   #8a88aa;
+  --text3:   #44425a;
+  --glow:    rgba(124,111,255,0.25);
+  --font-mono: 'Space Mono', monospace;
+  --font-disp: 'Bebas Neue', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: 100vh;
+}
+
+/* Noise overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
+
+.app { max-width: 1100px; margin: 0 auto; padding: 24px 16px; overflow-x: clip; }
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 28px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header-left h1 {
+  font-family: var(--font-disp);
+  font-size: 48px; letter-spacing: 2px;
+  color: var(--text);
+  line-height: 1;
+}
+.header-left h1 span { color: var(--accent); }
+.header-date { font-family: var(--font-mono); font-size: 11px; color: var(--text2); margin-top: 4px; }
+.streak-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--accent), #9b8fff);
+  padding: 8px 16px; border-radius: 20px;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  color: #fff; letter-spacing: 0.05em;
+}
+
+/* ── NAV ── */
+.nav-row { display: flex; gap: 6px; margin-bottom: 20px; }
+.nav-btn {
+  flex: 1; padding: 12px 8px; text-align: center; cursor: pointer;
+  background: var(--s1); color: var(--text2);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font-family: var(--font-body); font-size: 13px; font-weight: 500;
+  transition: all 0.15s;
+}
+.nav-btn:hover { background: var(--s2); color: var(--text); }
+.nav-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── DAY TABS ── */
+.day-tabs {
+  display: flex; gap: 5px; margin-bottom: 20px;
+  background: var(--s1); padding: 6px; border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.day-tab {
+  flex: 1; padding: 10px 4px; text-align: center; cursor: pointer;
+  border-radius: 6px; font-family: var(--font-mono); font-size: 11px;
+  background: transparent; color: var(--text2);
+  border: 1px solid transparent; transition: all 0.15s;
+  position: relative;
+}
+.day-tab:hover { color: var(--text); background: var(--s2); }
+.day-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── VIEWS ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── METRONOME ── */
+.metro-wrap {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  position: -webkit-sticky; position: sticky; top: 20px; z-index: 100;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+.metro-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.metro-label { font-family: var(--font-disp); font-size: 22px; letter-spacing: 1px; color: var(--text2); }
+
+.metro-start-btn {
+  padding: 10px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: none;
+  box-shadow: 0 4px 0 rgba(124, 111, 255, 0.4);
+  transition: all 0.1s;
+  letter-spacing: 1px;
+}
+.metro-start-btn:active {
+  box-shadow: 0 0px 0 rgba(124, 111, 255, 0.4);
+  transform: translateY(4px);
+}
+.metro-start-btn.playing {
+  background: var(--red);
+  box-shadow: 0 4px 0 rgba(255, 91, 91, 0.4);
+}
+.metro-start-btn.playing:active {
+  box-shadow: 0 0px 0 rgba(255, 91, 91, 0.4);
+}
+
+.metro-bpm-row { display: flex; align-items: center; gap: 12px; }
+.metro-bpm-num {
+  font-family: var(--font-disp); font-size: 56px;
+  background: none; border: none; color: var(--accent);
+  width: 130px; text-align: center; cursor: text;
+  letter-spacing: 2px; outline: none;
+}
+.metro-bpm-num:focus { color: var(--text); }
+.metro-slider {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 4px; border-radius: 2px; outline: none;
+  background: var(--s3); cursor: pointer;
+}
+.metro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  background: var(--accent); border-radius: 50%; cursor: pointer;
+  box-shadow: 0 0 8px var(--glow);
+}
+.beat-lights { display: flex; gap: 6px; margin: 14px 0; }
+.beat-light {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: var(--s3); transition: background 0.05s;
+}
+.beat-light.active { background: var(--accent); box-shadow: 0 0 8px var(--glow); }
+.beat-light.downbeat { background: var(--accent2); box-shadow: 0 0 8px rgba(200,169,110,0.5); }
+.sub-row { display: flex; gap: 6px; }
+.sub-btn {
+  flex: 1; padding: 7px; text-align: center; cursor: pointer;
+  background: var(--s2); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 6px;
+  font-family: var(--font-mono); font-size: 11px; transition: all 0.12s;
+}
+.sub-btn:hover { color: var(--text); }
+.sub-btn.active { background: var(--s3); color: var(--accent); border-color: var(--accent); }
+
+/* ── MASTER TIMER ── */
+.master-wrap {
+  background: var(--s1); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap;
+}
+.master-left { display: flex; align-items: center; gap: 20px; }
+.master-time {
+  font-family: var(--font-disp); font-size: 52px;
+  color: var(--text); letter-spacing: 2px; line-height: 1;
+}
+
+/* ── SESSION CARDS ── */
+.mbtn {
+  padding: 8px 16px; border-radius: 8px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  border: 1px solid var(--border); background: var(--s2);
+  color: var(--text2); transition: all 0.12s; letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.mbtn:hover { color: var(--text); border-color: var(--border2); }
+.mbtn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mbtn.primary:hover { background: #9b8fff; }
+.mbtn.finish { color: var(--teal); border-color: rgba(61,220,132,0.3); }
+.mbtn.finish:hover { background: rgba(61,220,132,0.1); color: var(--teal); }
+
+.session-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+}
+.session-card-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.session-card-title {
+  font-family: var(--font-disp); font-size: 22px;
+  letter-spacing: 1px; color: var(--text);
+}
+.session-timer {
+  font-family: var(--font-mono); font-size: 13px;
+  color: var(--accent2); background: var(--s2);
+  padding: 4px 10px; border-radius: 20px;
+  border: 1px solid rgba(200,169,110,0.2);
+}
+.session-card-body { padding: 0; }
+
+/* ── EXERCISE TABLE ── */
+.ex-table { width: 100%; border-collapse: collapse; }
+.ex-th {
+  padding: 10px 12px; text-align: left;
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+.ex-th.center { text-align: center; }
+.ex-row { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+.ex-row:last-child { border-bottom: none; }
+.ex-row:hover { background: var(--s2); }
+.ex-cell { padding: 12px; vertical-align: middle; text-align: center; }
+.ex-cell.left { text-align: left; }
+.mech-name { font-size: 14px; color: var(--text); font-weight: 500; }
+.stat-chip {
+  font-family: var(--font-mono); font-size: 13px;
+  padding: 5px 10px; border-radius: 6px; display: inline-block;
+  background: var(--s2); color: var(--text2);
+  border: 1px solid var(--border);
+}
+.target-chip {
+  font-family: var(--font-mono); font-size: 13px;
+  padding: 5px 10px; border-radius: 6px; display: inline-block;
+  background: rgba(124,111,255,0.08); color: var(--accent);
+  border: 1px solid rgba(124,111,255,0.25);
+}
+.pr-chip {
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 7px; border-radius: 10px;
+  background: rgba(200,169,110,0.12); color: var(--accent2);
+  border: 1px solid rgba(200,169,110,0.25); margin-left: 6px;
+}
+.bpm-input {
+  width: 80px; padding: 6px 8px; text-align: center;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--teal); border-radius: 6px; outline: none; transition: border 0.12s;
+}
+.bpm-input:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(61,220,132,0.12); }
+.bpm-input.pr { color: var(--accent2) !important; border-color: rgba(200,169,110,0.4) !important; }
+.quality-wrap { display: flex; gap: 4px; align-items: center; margin-top: 12px; padding: 0 20px 14px; }
+.quality-label { font-family: var(--font-mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-right: 6px; }
+.q-star { font-size: 18px; cursor: pointer; color: var(--text3); transition: color 0.1s; user-select: none; }
+.q-star.on { color: var(--accent2); }
+.notes-input {
+  width: 100%; padding: 10px 12px; margin-top: 6px;
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--text); border-radius: 6px; outline: none;
+  font-family: var(--font-body); font-size: 13px; resize: none;
+  transition: border 0.12s;
+}
+.notes-input:focus { border-color: var(--border2); }
+.notes-wrap { padding: 0 20px 16px; }
+.notes-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.single-metric { padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+.single-metric label { font-family: var(--font-mono); font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+.single-input {
+  width: 100px; padding: 8px 10px; text-align: center;
+  font-family: var(--font-mono); font-size: 16px; font-weight: 700;
+  background: var(--s2); border: 1px solid var(--border);
+  color: var(--teal); border-radius: 6px; outline: none;
+}
+.single-input:focus { border-color: var(--teal); }
+
+/* ── STATS ROW ── */
+.stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.stat-val { font-family: var(--font-disp); font-size: 32px; color: var(--accent); letter-spacing: 1px; }
+.stat-lbl { font-family: var(--font-mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+/* ── CHARTS ── */
+.chart-card {
+  background: var(--s1); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+}
+.chart-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.chart-ttl { font-family: var(--font-disp); font-size: 20px; letter-spacing: 1px; color: var(--text); }
+.chart-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text2); }
+canvas { display: block; width: 100%; border-radius: 6px; background: var(--s2); }
+
+/* ── UTILITY BUTTONS ── */
+.utility-row { display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;}
+.btn-utility { flex: 1; padding: 12px; font-size: 12px; font-weight: 700; font-family: var(--font-mono); text-transform: uppercase; background-color: var(--s2); color: var(--accent-light); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: 0.2s;}
+.btn-utility:hover { background-color: var(--s3); color: var(--text); border-color: var(--border2); }
+.btn-danger { color: var(--red); border-color: rgba(255,91,91,0.3); }
+.btn-danger:hover { background-color: rgba(255,91,91,0.1); color: var(--red); }
+
+/* ── PERSONAL RECORDS ── */
+.pr-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 10px; }
+.pr-card {
+  background: var(--s2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px 14px;
+}
+.pr-mech { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.pr-val { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--accent2); }
+.pr-unit { font-size: 10px; color: var(--text3); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .header-left h1 { font-size: 34px; }
+  .master-time { font-size: 38px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>GUITAR <span>LOG</span></h1>
+      <div class="header-date" id="hdr-date"></div>
+    </div>
+    <div id="streak-badge" class="streak-badge">🔥 <span id="streak-num">0</span> day streak</div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav-row">
+    <button class="nav-btn active" onclick="switchView('logger')">Daily Schedule</button>
+    <button class="nav-btn" onclick="switchView('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="switchView('records')">Personal Records</button>
+  </div>
+
+  <!-- DAY TABS -->
+  <div class="day-tabs" id="day-tabs"></div>
+
+  <!-- ════ VIEW: LOGGER ════ -->
+  <div id="v-logger" class="view active">
+
+    <!-- METRONOME -->
+    <div class="metro-wrap">
+      <div class="metro-top">
+        <span class="metro-label">METRONOME</span>
+        <div style="display:flex;gap:12px;align-items:center">
+          
+          <!-- TIME SIGNATURE CONTROLS -->
+          <div style="display:flex;align-items:center;gap:4px;" title="Time Signature">
+            <input type="number" id="ts-num" value="4" min="1" max="30" onchange="updateTS()" style="width:40px; background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:4px; text-align:center; font-family:var(--font-mono); font-size:14px; font-weight:bold;">
+            <span style="color:var(--text2); font-weight:bold;">/</span>
+            <input type="number" id="ts-den" value="4" min="1" max="30" onchange="updateTS()" style="width:40px; background:var(--s2); border:1px solid var(--border); color:var(--text); border-radius:4px; text-align:center; font-family:var(--font-mono); font-size:14px; font-weight:bold;">
+          </div>
+
+          <span id="tempo-name" style="font-family:var(--font-mono);font-size:12px;color:var(--text2);text-transform:uppercase;margin-left:4px;">Moderato</span>
+          <button class="metro-start-btn" onclick="toggleMetro()" id="metro-toggle-btn">▶ START</button>
+        </div>
+      </div>
+      <div class="metro-bpm-row">
+        <button onclick="nudgeBpm(-5)" style="background:var(--s2);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">−</button>
+        <input type="number" id="metro-bpm" class="metro-bpm-num" value="120" min="1" max="999" onchange="setBpm(this.value)" oninput="if(this.value.length>3)this.value=this.value.slice(0,3); syncBpmInput(this.value)">
+        <button onclick="nudgeBpm(5)" style="background:var(--s2);border:1px solid var(--border);color:var(--text2);width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:16px">+</button>
+        <input type="range" id="metro-slider" class="metro-slider" min="1" max="999" value="120" oninput="setBpm(this.value)" style="flex:1;margin-left:12px">
+      </div>
+      <div class="beat-lights" id="beat-lights"></div>
+      <div class="sub-row">
+        <button class="sub-btn active" onclick="setSub(1,this)">1/4</button>
+        <button class="sub-btn" onclick="setSub(2,this)">1/8</button>
+        <button class="sub-btn" onclick="setSub(3,this)">Triplets</button>
+        <button class="sub-btn" onclick="setSub(4,this)">1/16</button>
+      </div>
+    </div>
+
+    <!-- MASTER TIMER -->
+    <div class="master-wrap">
+      <div class="master-left">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Global Practice Time</div>
+          <div class="master-time" id="master-time">00:00:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSIONS -->
+    <div class="session-card">
+      <div class="session-card-header">
+        <span class="session-card-title" id="s1-title">Session 1</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="mbtn" id="s1-play-btn" onclick="toggleSession(1)">▶ START</button>
+          <button class="mbtn finish" onclick="finishSession(1)">■ FINISH</button>
+          <span class="session-timer" id="s1-timer-badge">00:00</span>
+        </div>
+      </div>
+      <div class="session-card-body" id="s1-body"></div>
+      <div class="quality-wrap">
+        <span class="quality-label">Quality:</span>
+        <span class="q-star" data-s="1" data-v="1" onclick="isDirty=true; setQuality(1,1)">★</span>
+        <span class="q-star" data-s="1" data-v="2" onclick="isDirty=true; setQuality(1,2)">★</span>
+        <span class="q-star" data-s="1" data-v="3" onclick="isDirty=true; setQuality(1,3)">★</span>
+        <span class="q-star" data-s="1" data-v="4" onclick="isDirty=true; setQuality(1,4)">★</span>
+        <span class="q-star" data-s="1" data-v="5" onclick="isDirty=true; setQuality(1,5)">★</span>
+      </div>
+      <div class="notes-wrap">
+        <div class="notes-lbl">Session notes</div>
+        <textarea class="notes-input" id="s1-notes" rows="2" placeholder="What felt good? What needs work?" oninput="isDirty=true;"></textarea>
+        <button class="mbtn primary" style="width: 100%; border-radius: 0 0 10px 10px; margin-top: 15px;" onclick="saveSessionData(1)">Save Session 1</button>
+      </div>
+    </div>
+
+    <div class="session-card">
+      <div class="session-card-header">
+        <span class="session-card-title" id="s2-title">Session 2</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="mbtn" id="s2-play-btn" onclick="toggleSession(2)">▶ START</button>
+          <button class="mbtn finish" onclick="finishSession(2)">■ FINISH</button>
+          <span class="session-timer" id="s2-timer-badge">00:00</span>
+        </div>
+      </div>
+      <div class="session-card-body" id="s2-body"></div>
+      <div class="quality-wrap">
+        <span class="quality-label">Quality:</span>
+        <span class="q-star" data-s="2" data-v="1" onclick="isDirty=true; setQuality(2,1)">★</span>
+        <span class="q-star" data-s="2" data-v="2" onclick="isDirty=true; setQuality(2,2)">★</span>
+        <span class="q-star" data-s="2" data-v="3" onclick="isDirty=true; setQuality(2,3)">★</span>
+        <span class="q-star" data-s="2" data-v="4" onclick="isDirty=true; setQuality(2,4)">★</span>
+        <span class="q-star" data-s="2" data-v="5" onclick="isDirty=true; setQuality(2,5)">★</span>
+      </div>
+      <div class="notes-wrap">
+        <div class="notes-lbl">Session notes</div>
+        <textarea class="notes-input" id="s2-notes" rows="2" placeholder="What felt good? What needs work?" oninput="isDirty=true;"></textarea>
+        <button class="mbtn primary" style="width: 100%; border-radius: 0 0 10px 10px; margin-top: 15px;" onclick="saveSessionData(2)">Save Session 2</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ VIEW: DASHBOARD ════ -->
+  <div id="v-dashboard" class="view">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-ttl">Time Spent Today</span>
+        <span class="chart-sub" id="total-time-lbl"></span>
+      </div>
+      <canvas id="c-time" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-ttl" id="c1-ttl">Session 1 BPM Progress</span>
+      </div>
+      <canvas id="c-s1" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-ttl" id="c2-ttl">Session 2 BPM Progress</span>
+      </div>
+      <canvas id="c-s2" height="280"></canvas>
+    </div>
+    
+    <div class="utility-row">
+        <button class="btn-utility" onclick="exportData()">⬇ Export Backup (.csv)</button>
+        <button class="btn-utility btn-danger" onclick="resetAllData()">✖ Reset All Data</button>
+    </div>
+  </div>
+
+  <!-- ════ VIEW: PERSONAL RECORDS ════ -->
+  <div id="v-records" class="view">
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-title-row">
+        <span class="chart-ttl">Personal Records — All Time</span>
+        <span class="chart-sub">Highest BPM ever achieved per mechanic</span>
+      </div>
+      <div class="pr-grid" id="pr-grid"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-ttl">Weekly BPM Average Trend</span>
+      </div>
+      <canvas id="c-weekly" height="240"></canvas>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// DATA MODELS
+// ─────────────────────────────────────────────────────────────────
+const mechAltPicking   = ["Right hand picking","Sextuplets scale runs","16th caged arpeggios","Scale grouping sequences","Scale intervals","String skipping"];
+const mechSweepTap     = ["Tapping","Sweep 2nps","Sweep 3nps","Sweep 4nps","Sweep 5nps","Sweep 6nps"];
+const mechLegato       = ["Legato runs","Finger trills","Pinky hammer-ons","Ring-pinky trill"];
+const mechThumpSel     = ["Thumb 1/4","Thumb 1/8","Thumb triplets","Thumb 16th","Sel 1/4","Sel 1/8","Sel triplets","Sel 16th"];
+const mechFunkRhythm   = ["16th muting grid","Ghost notes isolation","Mutes + ghosts combo","Nile Rodgers Chic skip","Cory Wong displaced","Tom Misch neo-soul feel"];
+const mechPhrasing     = ["Major 3rds targeting", "Minor 3rds targeting", "Dominant 7ths targeting", "Major 7ths targeting", "Altered phrasing"];
+const mechFusion       = ["Odd-meter comping", "Syncopated 16th rhythms", "Drop-2 chord voicings", "Quartal harmony grooves", "Walking basslines"];
+
+const routines = {
+  Monday:    { s1:{title:'Strict Alt-Picking & Hybrid',type:'bpm',items:mechAltPicking},   s2:{title:'Tapping & Sweep Picking',type:'bpm',items:mechSweepTap} },
+  Tuesday:   { s1:{title:'Legato & Finger Control',type:'bpm',items:mechLegato},           s2:{title:'Phrasing & Chord Tone Targeting',type:'bpm',items:mechPhrasing} },
+  Wednesday: { s1:{title:'Thumping & Selective Picking',type:'bpm',items:mechThumpSel},    s2:{title:'Fusion Progressions & Rhythm Playing',type:'bpm',items:mechFusion} },
+  Thursday:  { s1:{title:'Strict Alt-Picking & Hybrid',type:'bpm',items:mechAltPicking},   s2:{title:'Tapping & Sweep Picking',type:'bpm',items:mechSweepTap} },
+  Friday:    { s1:{title:'Legato & Finger Control',type:'bpm',items:mechLegato},           s2:{title:'Phrasing & Chord Tone Targeting',type:'bpm',items:mechPhrasing} },
+  Saturday:  { s1:{title:'Thumping & Selective Picking',type:'bpm',items:mechThumpSel},    s2:{title:'Fusion Progressions & Rhythm Playing',type:'bpm',items:mechFusion} },
+  Sunday:    { s1:{title:'Weekly Performance Review',type:'single',label:'Review score (1-10)'},  s2:{title:'Consolidation & Prep',type:'single',label:'Prep completed (1=yes)'} }
+};
+
+const DAYS = Object.keys(routines);
+
+let db  = JSON.parse(localStorage.getItem('guitarDB_v11'))  || [];
+let prs = JSON.parse(localStorage.getItem('guitarPRs_v11')) || {};
+
+[...mechAltPicking,...mechSweepTap,...mechLegato,...mechThumpSel,...mechFunkRhythm,...mechPhrasing,...mechFusion].forEach(m=>{
+  if(prs[m]===undefined) prs[m] = 0;
+});
+
+function saveDB(){ localStorage.setItem('guitarDB_v11',JSON.stringify(db)); localStorage.setItem('guitarPRs_v11',JSON.stringify(prs)); }
+
+// ─────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────
+let currentDay = DAYS[new Date().getDay()===0?6:new Date().getDay()-1];
+let quality = {1:0, 2:0};
+let isDirty = false;
+
+let timer = {
+  running: false, 
+  activeSess: null, 
+  globalUnsaved: 0,
+  s1Unsaved: 0, 
+  s2Unsaved: 0, 
+  int: null
+};
+
+window.addEventListener('beforeunload', function (e) {
+    if (isDirty || timer.s1Unsaved > 0 || timer.s2Unsaved > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+function checkUnsaved() {
+  if(isDirty || timer.s1Unsaved > 0 || timer.s2Unsaved > 0) {
+    if(confirm("You have unsaved changes. Do you want to save them before proceeding?")) {
+      forceSave();
+    }
+    isDirty = false;
+    timer.s1Unsaved = 0;
+    timer.s2Unsaved = 0;
+    timer.globalUnsaved = 0;
+    updateTimerUI();
+  }
+}
+
+function resetAllData() {
+  if(confirm("WARNING: This will completely erase all your saved sessions and personal records. This action CANNOT be undone. Are you absolutely sure?")) {
+      localStorage.removeItem('guitarDB_v11');
+      localStorage.removeItem('guitarPRs_v11');
+      db = [];
+      prs = {};
+      alert("All data has been reset.");
+      location.reload();
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// METRONOME
+// ─────────────────────────────────────────────────────────────────
+let audioCtx=null, metroPlaying=false, bpm=120, sub=1, beatIdx=0, nextTime=0, metroID;
+let tsNum=4, tsDen=4; 
+
+const tempoNames = [
+  [0,'—'],[40,'Grave'],[55,'Largo'],[66,'Larghetto'],[76,'Adagio'],
+  [84,'Andante'],[100,'Moderato'],[116,'Allegretto'],[120,'Allegro'],
+  [156,'Vivace'],[168,'Presto'],[200,'Prestissimo']
+];
+
+function getTempoName(b){
+  let name='—';
+  for(const[t,n] of tempoNames){ if(b>=t) name=n; }
+  return name;
+}
+
+function updateTS() {
+   tsNum = parseInt(document.getElementById('ts-num').value) || 4;
+   tsDen = parseInt(document.getElementById('ts-den').value) || 4;
+   beatIdx = 0;
+   buildBeatLights();
+}
+
+function syncBpmInput(v) {
+  let parsed = parseInt(v);
+  if (!isNaN(parsed) && parsed >= 1 && parsed <= 999) {
+      bpm = parsed;
+      document.getElementById('metro-slider').value = bpm;
+      document.getElementById('tempo-name').textContent = getTempoName(bpm);
+  }
+}
+
+function setBpm(v){
+  let parsed = parseInt(v);
+  if(isNaN(parsed)) return; 
+  bpm = Math.max(1, Math.min(999, parsed));
+  document.getElementById('metro-bpm').value = bpm;
+  document.getElementById('metro-slider').value = bpm;
+  document.getElementById('tempo-name').textContent = getTempoName(bpm);
+  document.getElementById('metro-slider').style.setProperty('--p', ((bpm-1)/998*100)+'%');
+}
+
+function nudgeBpm(d){ setBpm(bpm+d); }
+
+function setSub(v,btn){
+  sub=v; beatIdx=0;
+  document.querySelectorAll('.sub-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildBeatLights();
+}
+
+function buildBeatLights(){
+  const c = document.getElementById('beat-lights');
+  c.innerHTML='';
+  const total = tsNum * sub;
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    d.className='beat-light';
+    if(i%sub===0) d.dataset.down='1';
+    c.appendChild(d);
+  }
+}
+
+function litBeat(idx){
+  const lights = document.querySelectorAll('.beat-light');
+  lights.forEach((l,i)=>{
+    l.classList.remove('active','downbeat');
+    if(i===idx){
+      l.classList.add(l.dataset.down==='1' ? 'downbeat' : 'active');
+    }
+  });
+}
+
+function scheduleNote(noteType, time){
+  const osc = audioCtx.createOscillator();
+  const env = audioCtx.createGain();
+  osc.connect(env); env.connect(audioCtx.destination);
+  osc.type='triangle';
+  
+  if(noteType === 0) {
+     osc.frequency.value = 1050;
+     env.gain.setValueAtTime(0.8, time);
+  } else if (noteType === 1) {
+     osc.frequency.value = 750;
+     env.gain.setValueAtTime(0.6, time);
+  } else {
+     osc.frequency.value = 500;
+     env.gain.setValueAtTime(0.3, time);
+  }
+  
+  env.gain.exponentialRampToValueAtTime(0.001, time+0.06);
+  osc.start(time); osc.stop(time+0.06);
+
+  const delay = (time - audioCtx.currentTime)*1000;
+  const snapIdx = beatIdx;
+  setTimeout(()=>litBeat(snapIdx), Math.max(0,delay));
+}
+
+function scheduler(){
+  while(nextTime < audioCtx.currentTime + 0.12){
+    let isDownbeat = (beatIdx === 0);
+    let isBeat = (beatIdx % sub === 0);
+    let noteType = isDownbeat ? 0 : (isBeat ? 1 : 2);
+    
+    scheduleNote(noteType, nextTime);
+    
+    nextTime += (60/bpm)/sub;
+    beatIdx++;
+    if(beatIdx >= tsNum * sub) beatIdx=0;
+  }
+  metroID = setTimeout(scheduler, 25);
+}
+
+function startMetro(){
+  if(metroPlaying) return;
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  if(isNaN(bpm) || bpm <= 0) bpm = 120; 
+  metroPlaying=true; beatIdx=0; nextTime=audioCtx.currentTime+0.05; scheduler();
+  const btn = document.getElementById('metro-toggle-btn');
+  btn.innerHTML='■ STOP';
+  btn.classList.add('playing');
+}
+
+function stopMetro(){
+  if(!metroPlaying) return;
+  metroPlaying=false; clearTimeout(metroID);
+  document.querySelectorAll('.beat-light').forEach(l=>l.classList.remove('active','downbeat'));
+  const btn = document.getElementById('metro-toggle-btn');
+  btn.innerHTML='▶ START';
+  btn.classList.remove('playing');
+}
+
+function toggleMetro(){ metroPlaying ? stopMetro() : startMetro(); }
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'button') return;
+        e.preventDefault(); 
+        toggleMetro();
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────
+// TIMERS
+// ─────────────────────────────────────────────────────────────────
+function fmt(s){ return new Date(s*1000).toISOString().substr(11,8); }
+function fmtShort(s){ const m=Math.floor(s/60),sec=s%60; return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`; }
+
+function toggleSession(sid) {
+  if (timer.running && timer.activeSess !== sid) {
+    pauseSession(timer.activeSess);
+  }
+  
+  if (timer.running && timer.activeSess === sid) {
+    pauseSession(sid);
+  } else {
+    startSession(sid);
+  }
+}
+
+function startSession(sid) {
+  timer.running = true;
+  timer.activeSess = sid;
+  let btn = document.getElementById(`s${sid}-play-btn`);
+  if(btn) {
+      btn.innerHTML = '⏸ PAUSE';
+      btn.classList.add('primary');
+  }
+  if(!timer.int) timer.int = setInterval(tickTimer, 1000);
+}
+
+function pauseSession(sid) {
+  timer.running = false;
+  let btn = document.getElementById(`s${sid}-play-btn`);
+  if(btn) {
+      btn.innerHTML = '▶ START';
+      btn.classList.remove('primary');
+  }
+  clearInterval(timer.int); timer.int = null;
+}
+
+function tickTimer(){
+  timer.globalUnsaved++;
+  if(timer.activeSess === 1) timer.s1Unsaved++;
+  if(timer.activeSess === 2) timer.s2Unsaved++;
+  updateTimerUI();
+}
+
+function updateTimerUI() {
+  const dateKey = todayKey();
+  let existing = db.find(d => d.date === dateKey && d.day === currentDay);
+  let dbS1 = existing ? (existing.s1.time || 0) : 0;
+  let dbS2 = existing ? (existing.s2.time || 0) : 0;
+  
+  let totalS1 = dbS1 + timer.s1Unsaved;
+  let totalS2 = dbS2 + timer.s2Unsaved;
+  let totalGlobal = totalS1 + totalS2;
+  
+  document.getElementById('master-time').textContent = fmt(totalGlobal);
+  document.getElementById('s1-timer-badge').textContent = fmtShort(totalS1);
+  document.getElementById('s2-timer-badge').textContent = fmtShort(totalS2);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UI RENDERING
+// ─────────────────────────────────────────────────────────────────
+function renderLogger(){
+  const cfg = routines[currentDay];
+  initSessionBase();   
+  document.getElementById('s1-title').textContent=cfg.s1.title;
+  document.getElementById('s2-title').textContent=cfg.s2.title;
+  buildSession(cfg.s1,1);
+  buildSession(cfg.s2,2);
+  loadTodayData();
+  updateQualityStars(1,quality[1]);
+  updateQualityStars(2,quality[2]);
+  
+  updateTimerUI();
+  
+  document.getElementById('s1-play-btn').innerHTML = '▶ START';
+  document.getElementById('s1-play-btn').classList.remove('primary');
+  document.getElementById('s2-play-btn').innerHTML = '▶ START';
+  document.getElementById('s2-play-btn').classList.remove('primary');
+}
+
+let sessionBase = {};   
+
+function initSessionBase(){
+  const allMechs = [...mechAltPicking,...mechSweepTap,...mechLegato,...mechThumpSel,...mechFunkRhythm,...mechPhrasing,...mechFusion];
+  const dateKey = todayKey();
+
+  allMechs.forEach(mech => {
+    let best = 0;
+    db.forEach(entry => {
+      if(entry.date === dateKey) return; 
+      ['s1','s2'].forEach(sk => {
+        const v = entry[sk]?.data?.[mech];
+        if(typeof v === 'number' && v > best) best = v;
+      });
+    });
+    sessionBase[mech] = best;
+  });
+}
+
+function buildSession(cfg, sid){
+  const body=document.getElementById(`s${sid}-body`);
+  const dateKey=todayKey();
+  const existing=db.find(d=>d.date===dateKey&&d.day===currentDay);
+  const sdata=existing?.[`s${sid}`]?.data||{};
+
+  if(cfg.type==='bpm'){
+    let html=`<table class="ex-table">
+      <thead><tr>
+        <th class="ex-th left">Mechanic</th>
+        <th class="ex-th center">Previous (−2)</th>
+        <th class="ex-th center">Target (+2)</th>
+        <th class="ex-th center">Today's BPM</th>
+      </tr></thead><tbody>`;
+
+    cfg.items.forEach((mech,idx)=>{
+      const base     = sessionBase[mech] || 0;
+      const prevDisp = base === 0 ? '—' : (base - 2);
+      const tgtDisp  = base === 0 ? 'Set base' : (base + 2);
+      const todayVal = sdata[mech] || '';
+      const isPR     = todayVal !== '' && parseInt(todayVal) > (prs[mech]||0);
+      const rowId    = mech.replace(/\s+/g,'-');
+
+      html+=`<tr class="ex-row" id="row-${rowId}">
+        <td class="ex-cell left">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="mech-name">${mech}</span>
+            <span class="pr-chip" id="pr-${rowId}" style="display:${isPR?'inline':'none'}">PR!</span>
+          </div>
+        </td>
+        <td class="ex-cell" id="prev-${rowId}">
+          <span class="stat-chip">${prevDisp}</span>
+        </td>
+        <td class="ex-cell" id="tgt-${rowId}">
+          <span class="target-chip">${tgtDisp}</span>
+        </td>
+        <td class="ex-cell">
+          <input type="number" id="s${sid}-bpm-${idx}"
+            class="bpm-input${isPR?' pr':''}"
+            placeholder="${base===0?'e.g.100':base}"
+            value="${todayVal}"
+            data-mech="${mech}"
+            min="1" max="999"
+            oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3); isDirty=true; handleBpmInput(this)"
+            onkeydown="handleBpmKey(event)">
+        </td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+    body.innerHTML=html;
+  } else {
+    const val = typeof sdata==='number'?sdata:'';
+    body.innerHTML=`<div class="single-metric">
+      <label>${cfg.label}:</label>
+      <input type="number" id="s${sid}-metric" class="single-input"
+        placeholder="0" value="${val}" oninput="isDirty=true">
+    </div>`;
+  }
+}
+
+function handleBpmInput(el){
+  const mech = el.dataset.mech;
+  const val  = parseInt(el.value);
+  if(isNaN(val) || val <= 0) return;
+
+  const rowId   = mech.replace(/\s+/g,'-');
+  const newPrev = val - 2;
+  const newTgt  = val + 2;
+
+  const prevCell = document.getElementById(`prev-${rowId}`);
+  const tgtCell  = document.getElementById(`tgt-${rowId}`);
+  if(prevCell) prevCell.innerHTML = `<span class="stat-chip">${newPrev > 0 ? newPrev : '—'}</span>`;
+  if(tgtCell)  tgtCell.innerHTML  = `<span class="target-chip">${newTgt}</span>`;
+
+  const isPR = val > (prs[mech]||0);
+  el.classList.toggle('pr', isPR);
+  const badge = document.getElementById(`pr-${rowId}`);
+  if(badge) badge.style.display = isPR ? 'inline' : 'none';
+}
+
+function handleBpmKey(e){
+  if(e.key==='Enter'){
+    isDirty = true;
+    let val = parseInt(e.target.value);
+    if(!isNaN(val) && val > 0) {
+      handleBpmInput(e.target);
+      e.target.blur(); // Remove focus
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// QUALITY STARS
+// ─────────────────────────────────────────────────────────────────
+function setQuality(sess,val){
+  quality[sess]=val;
+  updateQualityStars(sess,val);
+}
+
+function updateQualityStars(sess,val){
+  document.querySelectorAll(`.q-star[data-s="${sess}"]`).forEach(s=>{
+    s.classList.toggle('on', parseInt(s.dataset.v)<=val);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DATA PERSISTENCE
+// ─────────────────────────────────────────────────────────────────
+function todayKey(){ return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function dateToKey(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+
+function forceSave() {
+  const dateKey = todayKey();
+  let existing = db.find(d => d.date === dateKey && d.day === currentDay);
+  if(!existing) {
+    existing = {
+      date: dateKey, day: currentDay,
+      s1: { title: routines[currentDay].s1.title, type: routines[currentDay].s1.type, data: {}, time: 0, quality: 0, notes: '' },
+      s2: { title: routines[currentDay].s2.title, type: routines[currentDay].s2.type, data: {}, time: 0, quality: 0, notes: '' }
+    };
+    db.push(existing);
+  }
+  
+  existing.s1.time = (existing.s1.time || 0) + timer.s1Unsaved;
+  existing.s2.time = (existing.s2.time || 0) + timer.s2Unsaved;
+  
+  timer.s1Unsaved = 0;
+  timer.s2Unsaved = 0;
+  timer.globalUnsaved = 0;
+
+  [1, 2].forEach(sid => {
+    const cfg = routines[currentDay][`s${sid}`];
+    if (cfg.type === 'bpm') {
+        cfg.items.forEach((m, idx) => {
+            let el = document.getElementById(`s${sid}-bpm-${idx}`);
+            if (el && el.value) {
+                let val = parseInt(el.value);
+                existing[`s${sid}`].data[m] = Math.max(existing[`s${sid}`].data[m] || 0, val);
+                prs[m] = Math.max(prs[m] || 0, val);
+            }
+        });
+    } else {
+        let el = document.getElementById(`s${sid}-metric`);
+        if (el && el.value) existing[`s${sid}`].data = parseInt(el.value);
+    }
+    existing[`s${sid}`].notes = document.getElementById(`s${sid}-notes`)?.value || '';
+    existing[`s${sid}`].quality = quality[sid] || 0;
+  });
+
+  saveDB();
+  updateTimerUI();
+  isDirty = false;
+}
+
+function saveSessionData(sid) {
+  forceSave();
+  alert(`Session ${sid} saved successfully!`);
+}
+
+function finishSession(sid){
+  if(sid) {
+    if(timer.running && timer.activeSess === sid) pauseSession(sid);
+  } else {
+    if(timer.running) pauseSession(timer.activeSess);
+  }
+  
+  forceSave();
+  stopMetro(); 
+  
+  if(sid) alert(`Session ${sid} successfully finished and locked in!`);
+  else alert(`Session officially finished and locked in!`);
+  
+  renderLogger(); 
+}
+
+function loadTodayData(){
+  const dateKey=todayKey();
+  const existing=db.find(d=>d.date===dateKey&&d.day===currentDay);
+  if(!existing) return;
+  quality[1]=existing.s1?.quality||0;
+  quality[2]=existing.s2?.quality||0;
+  if(existing.s1?.notes) document.getElementById('s1-notes').value=existing.s1.notes;
+  if(existing.s2?.notes) document.getElementById('s2-notes').value=existing.s2.notes;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STREAK CALCULATION
+// ─────────────────────────────────────────────────────────────────
+function calcStreak(){
+  const today=new Date(); let streak=0;
+  for(let i=0;i<365;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    const key=dateToKey(d);
+    const found=db.find(e=>e.date===key);
+    if(found&&((found.s1?.time||0)+(found.s2?.time||0))>60) streak++;
+    else if(i>0) break;
+  }
+  return streak;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// VIEW SWITCHING
+// ─────────────────────────────────────────────────────────────────
+function switchView(id){
+  if(document.getElementById(`v-${id}`).classList.contains('active')) return;
+  
+  if(id !== 'logger') checkUnsaved(); 
+  
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`v-${id}`).classList.add('active');
+  const btnMap={logger:0,dashboard:1,records:2};
+  document.querySelectorAll('.nav-btn')[btnMap[id]]?.classList.add('active');
+  
+  if(id==='dashboard') drawDashboard();
+  if(id==='records') drawRecords();
+}
+
+function selectDay(d){
+  if(d === currentDay) return;
+  
+  checkUnsaved();
+  
+  if(timer.running) pauseSession(timer.activeSess);
+  timer.s1Unsaved = 0;
+  timer.s2Unsaved = 0;
+  timer.globalUnsaved = 0;
+  
+  currentDay=d;
+  document.querySelectorAll('.day-tab').forEach((t,i)=>t.classList.toggle('active',DAYS[i]===d));
+  renderLogger();
+  
+  if(document.getElementById('v-dashboard').classList.contains('active')) drawDashboard();
+  if(document.getElementById('v-records').classList.contains('active')) drawRecords();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// CANVAS DRAWING HELPERS
+// ─────────────────────────────────────────────────────────────────
+const COLORS=['#7c6fff','#c8a96e','#3ddc84','#ff5b5b','#5bbfa4','#a78bca','#e07a5f','#5b9fff'];
+
+function setupCanvas(id,h){
+  const c=document.getElementById(id);
+  if(!c) return null;
+  const dpr=window.devicePixelRatio||1;
+  c.height=h*dpr;
+  c.style.height=h+'px';
+  c.width=c.parentElement.clientWidth*dpr;
+  c.style.width='100%';
+  const ctx=c.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,c.width/dpr,c.height/dpr);
+  return {ctx, w:c.width/dpr, h:h};
+}
+
+function drawGrid(ctx,w,h,pad,maxVal,steps=5){
+  ctx.strokeStyle='rgba(140,130,255,0.06)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=steps;i++){
+    const y=pad+(1-i/steps)*(h-pad*2);
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad/2,y); ctx.stroke();
+    const v=Math.round(maxVal*i/steps);
+    ctx.fillStyle='#44425a'; ctx.font=`10px 'Space Mono',monospace`;
+    ctx.textAlign='right'; ctx.fillText(v,pad-6,y+4);
+  }
+}
+
+function drawLineChart(ctx,w,h,pad,points,color,dotR=4){
+  if(points.length<2) return;
+  const maxVal=Math.max(...points.map(p=>p.v),10)*1.15;
+  const xStep=(w-pad*2)/(points.length-1);
+  const yRange=h-pad*1.5;
+
+  const grad=ctx.createLinearGradient(0,pad,0,h-pad/2);
+  grad.addColorStop(0,color+'55');
+  grad.addColorStop(1,color+'00');
+  ctx.beginPath();
+  points.forEach((p,i)=>{
+    const x=pad+i*xStep, y=h-pad/2-((p.v/maxVal)*yRange);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.lineTo(pad+(points.length-1)*xStep, h-pad/2);
+  ctx.lineTo(pad, h-pad/2);
+  ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=2.5;
+  ctx.lineJoin='round';
+  points.forEach((p,i)=>{
+    const x=pad+i*xStep, y=h-pad/2-((p.v/maxVal)*yRange);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  points.forEach((p,i)=>{
+    const x=pad+i*xStep, y=h-pad/2-((p.v/maxVal)*yRange);
+    ctx.fillStyle='#080810'; ctx.beginPath(); ctx.arc(x,y,dotR,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke();
+    if(p.v>0){
+      ctx.fillStyle='#e8e6ff'; ctx.font=`bold 10px 'Space Mono',monospace`;
+      ctx.textAlign='center'; ctx.fillText(p.v,x,y-8);
+    }
+    ctx.fillStyle='#44425a'; ctx.font=`9px 'Space Mono',monospace`;
+    ctx.fillText(p.l,x,h-4);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────
+// DASHBOARD
+// ─────────────────────────────────────────────────────────────────
+function drawDashboard(){
+  const cfg=routines[currentDay];
+  const dayData=db.filter(d=>d.day===currentDay);
+  const today=db.find(d=>d.date===todayKey()&&d.day===currentDay);
+
+  const totalTime=db.reduce((s,d)=>s+((d.s1?.time||0)+(d.s2?.time||0)),0);
+  const allDays=new Set(db.map(d=>d.date)).size;
+  const streak=calcStreak();
+  document.getElementById('streak-num').textContent=streak;
+
+  let bpmSum=0,bpmCount=0;
+  if(today){
+    const process=(s)=>{
+      if(s?.type==='bpm'&&s.data){ Object.values(s.data).forEach(v=>{if(v>0){bpmSum+=v;bpmCount++;}}); }
+    };
+    process(today.s1); process(today.s2);
+  }
+  const avgBpm=bpmCount?Math.round(bpmSum/bpmCount):0;
+
+  document.getElementById('stats-row').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${streak}</div><div class="stat-lbl">Day streak</div></div>
+    <div class="stat-card"><div class="stat-val">${allDays}</div><div class="stat-lbl">Sessions logged</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(totalTime/60)}m</div><div class="stat-lbl">Total practice</div></div>
+    <div class="stat-card"><div class="stat-val">${avgBpm||'—'}</div><div class="stat-lbl">Avg BPM today</div></div>
+  `;
+
+  const t1=today?.s1?.time||0, t2=today?.s2?.time||0;
+  const total=(t1+t2)||1;
+  document.getElementById('total-time-lbl').textContent=`${Math.floor(total/60)}m ${total%60}s total`;
+  const cv=setupCanvas('c-time',200);
+  if(cv){
+    const {ctx,w,h}=cv;
+    const pad=60, bh=32, gap=16;
+    const y1=h/2-bh-gap/2, y2=h/2+gap/2;
+    [[t1,cfg.s1.title,'#7c6fff',y1],[t2,cfg.s2.title,'#c8a96e',y2]].forEach(([t,lbl,col,y])=>{
+      const bw=(t/total)*(w-pad*2);
+      ctx.fillStyle=col+'22'; ctx.fillRect(pad,y,w-pad*2,bh);
+      if(bw>0){
+        ctx.fillStyle=col; ctx.fillRect(pad,y,bw,bh);
+        const sg=ctx.createLinearGradient(pad,y,pad,y+bh);
+        sg.addColorStop(0,'rgba(255,255,255,0.12)'); sg.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=sg; ctx.fillRect(pad,y,bw,bh);
+      }
+      ctx.fillStyle='#e8e6ff'; ctx.font=`bold 11px 'Space Mono',monospace`; ctx.textAlign='left';
+      ctx.fillText(lbl.substring(0,22),pad+8,y+bh/2+4);
+      ctx.fillStyle='#8a88aa'; ctx.textAlign='right';
+      ctx.fillText(`${Math.floor(t/60)}m ${t%60}s`,w-pad/4,y+bh/2+4);
+    });
+  }
+
+  document.getElementById('c1-ttl').textContent=cfg.s1.title+' — BPM History';
+  document.getElementById('c2-ttl').textContent=cfg.s2.title+' — BPM History';
+
+  drawMechLineChart('c-s1',dayData,'s1',cfg.s1,280);
+  drawMechLineChart('c-s2',dayData,'s2',cfg.s2,280);
+}
+
+function drawMechLineChart(canvasId, dayData, sessionKey, cfg, height){
+  const cv=setupCanvas(canvasId,height);
+  if(!cv) return;
+  const {ctx,w,h}=cv;
+  const pad=50;
+
+  if(cfg.type!=='bpm'){
+    const pts=dayData.map(d=>({l:d.date,v:d[sessionKey]?.data||0})).filter(p=>p.v>0);
+    if(pts.length===0){ noDataMsg(ctx,w,h); return; }
+    const maxVal=Math.max(...pts.map(p=>p.v),10)*1.2;
+    drawGrid(ctx,w,h,pad,maxVal);
+    drawLineChart(ctx,w,h,pad,pts,COLORS[0]);
+    return;
+  }
+
+  if(dayData.length===0){ noDataMsg(ctx,w,h); return; }
+
+  let lx=pad, ly=18;
+  cfg.items.forEach((m,i)=>{
+    const col=COLORS[i%COLORS.length];
+    ctx.fillStyle=col; ctx.fillRect(lx,ly-8,14,3);
+    ctx.fillStyle='#8a88aa'; ctx.font=`9px 'DM Sans',sans-serif`; ctx.textAlign='left';
+    const txt=m.length>18?m.substring(0,16)+'…':m;
+    ctx.fillText(txt,lx+18,ly);
+    lx+=ctx.measureText(txt).width+40;
+    if(lx>w-80){ lx=pad; ly+=14; }
+  });
+
+  const topPad=ly+16;
+  let maxVal=10;
+  const lines=[];
+  cfg.items.forEach((m,i)=>{
+    const pts=dayData.map(d=>({ l:d.date, v:d[sessionKey]?.data?.[m]||0 }));
+    const mx=Math.max(...pts.map(p=>p.v));
+    if(mx>maxVal) maxVal=mx;
+    if(mx>0) lines.push({pts,col:COLORS[i%COLORS.length],m});
+  });
+  maxVal*=1.2;
+
+  const xStep=(w-pad*1.5)/(Math.max(dayData.length-1,1));
+  dayData.forEach((d,i)=>{
+    const x=pad+i*xStep;
+    ctx.fillStyle='#44425a'; ctx.font=`9px 'Space Mono',monospace`;
+    ctx.textAlign='center'; ctx.fillText(d.date,x,h-4);
+  });
+
+  for(let i=0;i<=4;i++){
+    const y=topPad+(1-i/4)*(h-topPad-20);
+    ctx.strokeStyle='rgba(140,130,255,0.06)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad/2,y); ctx.stroke();
+    ctx.fillStyle='#44425a'; ctx.font=`9px 'Space Mono',monospace`;
+    ctx.textAlign='right'; ctx.fillText(Math.round(maxVal*i/4),pad-4,y+3);
+  }
+
+  lines.forEach(line=>{
+    const yRange=h-topPad-20;
+    ctx.beginPath(); ctx.strokeStyle=line.col; ctx.lineWidth=2;
+    ctx.setLineDash([]); ctx.lineJoin='round';
+    line.pts.forEach((p,i)=>{
+      if(p.v===0) return;
+      const x=pad+i*xStep, y=topPad+(1-p.v/maxVal)*yRange;
+      if(!ctx._hasMovedTo){ ctx.moveTo(x,y); ctx._hasMovedTo=true; }
+      else ctx.lineTo(x,y);
+    });
+    ctx._hasMovedTo=false; ctx.stroke();
+
+    line.pts.forEach((p,i)=>{
+      if(p.v===0) return;
+      const x=pad+i*xStep, y=topPad+(1-p.v/maxVal)*yRange;
+      ctx.fillStyle='#080810'; ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle=line.col; ctx.lineWidth=1.5; ctx.stroke();
+      ctx.fillStyle='#e8e6ff'; ctx.font=`bold 9px 'Space Mono',monospace`;
+      ctx.textAlign='center'; ctx.fillText(p.v,x,y-7);
+    });
+  });
+}
+
+function noDataMsg(ctx,w,h){
+  ctx.fillStyle='#44425a'; ctx.font=`14px 'DM Sans',sans-serif`;
+  ctx.textAlign='center'; ctx.fillText('No data logged yet',w/2,h/2);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// PERSONAL RECORDS
+// ─────────────────────────────────────────────────────────────────
+function drawRecords(){
+  const allMechs=[...mechAltPicking,...mechSweepTap,...mechLegato,...mechThumpSel,...mechFunkRhythm,...mechPhrasing,...mechFusion];
+  const grid=document.getElementById('pr-grid');
+  grid.innerHTML=allMechs.map(m=>{
+    const v=prs[m]||0;
+    return `<div class="pr-card">
+      <div class="pr-mech">${m}</div>
+      <div class="pr-val">${v||'—'} <span class="pr-unit">${v?'bpm':''}</span></div>
+    </div>`;
+  }).join('');
+
+  const weeklyData=[];
+  const today=new Date();
+  for(let w=7;w>=0;w--){
+    const wStart=new Date(today); wStart.setDate(today.getDate()-w*7);
+    const wEnd=new Date(wStart); wEnd.setDate(wStart.getDate()+6);
+    let bpmSum=0,cnt=0;
+    db.forEach(d=>{
+      const dp=new Date(d.date+', '+today.getFullYear());
+      if(dp>=wStart&&dp<=wEnd){
+        ['s1','s2'].forEach(s=>{ if(d[s]?.type==='bpm'&&d[s]?.data){ Object.values(d[s].data).forEach(v=>{if(v>0){bpmSum+=v;cnt++;}}); } });
+      }
+    });
+    if(cnt>0) weeklyData.push({l:`W-${w}`,v:Math.round(bpmSum/cnt)});
+  }
+
+  const cv=setupCanvas('c-weekly',240);
+  if(cv&&weeklyData.length>1){
+    const {ctx,w,h}=cv;
+    const maxVal=Math.max(...weeklyData.map(p=>p.v),10)*1.2;
+    drawGrid(ctx,w,h,40,maxVal);
+    drawLineChart(ctx,w,h,40,weeklyData,'#7c6fff',5);
+  } else if(cv){ noDataMsg(cv.ctx,cv.w,cv.h); }
+}
+
+function exportData(){
+  let csv='Date,Day,Session,Title,Mechanic,BPM,Time(s),Quality,Notes\n';
+  db.forEach(entry=>{
+    ['s1','s2'].forEach((sk,si)=>{
+      const s=entry[sk];
+      if(!s) return;
+      const qual=s.quality||'';
+      const notes=(s.notes||'').replace(/,/g,' ');
+      if(s.type==='bpm'&&s.data){
+        Object.entries(s.data).forEach(([m,v])=>{
+          csv+=`${entry.date},${entry.day},S${si+1},"${s.title}","${m}",${v},${s.time||0},${qual},"${notes}"\n`;
+        });
+      } else {
+        csv+=`${entry.date},${entry.day},S${si+1},"${s.title}","Metric",${s.data||''},${s.time||0},${qual},"${notes}"\n`;
+      }
+    });
+  });
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`guitar_log_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function init(){
+  document.getElementById('hdr-date').textContent=
+    new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const tabsEl=document.getElementById('day-tabs');
+  DAYS.forEach((d,i)=>{
+    const tab=document.createElement('button');
+    tab.className=`day-tab${d===currentDay?' active':''}`;
+    tab.innerHTML=`${d.substring(0,3)}`;
+    tab.onclick=()=>selectDay(d);
+    tabsEl.appendChild(tab);
+  });
+
+  buildBeatLights();
+  document.getElementById('streak-num').textContent=calcStreak();
+  renderLogger();
+}
+
+init();
+window.addEventListener('resize',()=>{
+  if(document.getElementById('v-dashboard').classList.contains('active')) drawDashboard();
+  if(document.getElementById('v-records').classList.contains('active')) drawRecords();
+});
+</script>
+</body>
+</html>
